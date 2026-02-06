@@ -1,34 +1,68 @@
+import net.fabricmc.loom.task.RemapJarTask
+
 plugins {
-    id("java")
-    id("fabric-loom").version("1.7-SNAPSHOT").apply(false)
+    id("fabric-loom") version "1.14-SNAPSHOT"
+    id("maven-publish")
 }
 
-subprojects {
-    apply<JavaPlugin>()
-    apply(plugin = "fabric-loom")
-    repositories {
-        mavenLocal()
-        mavenCentral()
-    }
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
+java.sourceCompatibility = JavaVersion.VERSION_21
+java.targetCompatibility = JavaVersion.VERSION_21
 
 val archives_base_name: String by project
+val minecraft_version: String by project
+val yarn_mappings: String by project
+val loader_version: String by project
+val fabric_version: String by project
+//val malilib_version: String by project
+//val litematica_projectid: String by project
+//val litematica_fileid: String by project
+
 val mod_version: String by project
 
-val buildAll = tasks.create("buildAll") {
-    dependsOn(":v1_21_4:build")
-    // This isn't working.... you still have to run each build individually
-/*    tasks.findByName(":v1_19_3:build")?.mustRunAfter(":v1_19_4:build")
-    tasks.findByName(":v1_19:build")?.mustRunAfter(":v1_19_3:build")
-    tasks.findByName(":v1_18:build")?.mustRunAfter(":v1_19:build")
-    tasks.findByName(":v1_17:build")?.mustRunAfter(":v1_18:build")*/
+dependencies {
+//    implementation(project(":common"))
+    minecraft("com.mojang:minecraft:${minecraft_version}")
+    mappings("net.fabricmc:yarn:${yarn_mappings}:v2")
+    annotationProcessor("io.github.llamalad7:mixinextras-fabric:0.5.3")
+    implementation("io.github.llamalad7:mixinextras-fabric:0.5.3")
+    include("io.github.llamalad7:mixinextras-fabric:0.5.3")
+    modImplementation("net.fabricmc:fabric-loader:${loader_version}")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${fabric_version}")
+    //Replace Masa malilib with sakura-ryoko fork
+    modImplementation("com.github.sakura-ryoko:malilib:1.21.11-0.27.5")
+    //Replace masa litematica with sakura-ryoko fork
+    modImplementation("com.github.sakura-ryoko:litematica:1.21.11-0.25.4")
+    modImplementation("com.ptsmods:devlogin:3.5")
+}
 
-    doLast {
-//        println("Copying files...")
+repositories {
+    maven("https://masa.dy.fi/maven")
+    maven("https://www.cursemaven.com")
+    maven ("https://jitpack.io")
+}
+
+// Process resources
+tasks.withType<ProcessResources> {
+    inputs.property("version", mod_version)
+
+    filesMatching("fabric.mod.json") {
+        expand(mapOf("version" to mod_version))
     }
 }
+
+tasks.build {
+    finalizedBy("renameJar")
+}
+
+tasks.create("renameJar") {
+    val remapJar = tasks.getByName<RemapJarTask>("remapJar")
+    val jarFile = remapJar.archiveFile.get().asFile
+
+    doLast {
+        val targetFile = File(jarFile.parent, "$archives_base_name-$mod_version-mc$minecraft_version.jar")
+        println("Renaming ${jarFile.absolutePath} to ${targetFile.absolutePath}")
+        targetFile.delete()
+        jarFile.renameTo(targetFile)
+    }
+}
+

@@ -5,6 +5,7 @@ import me.aleksilassila.litematica.printer.v1_21_4.actions.Action;
 import me.aleksilassila.litematica.printer.v1_21_4.config.PrinterConfig;
 import me.aleksilassila.litematica.printer.v1_21_4.guides.placement.PropertySpecificGuesserGuide;
 import me.aleksilassila.litematica.printer.v1_21_4.implementation.BlockHelperImpl;
+import me.aleksilassila.litematica.printer.v1_21_4.mixin.PlayerInventoryAccessor;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CoralBlock;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -36,9 +37,9 @@ abstract public class Guide extends BlockHelperImpl {
     public int getSlotWithItem(ClientPlayerEntity player, ItemStack itemStack) {
         PlayerInventory inventory = player.getInventory();
 
-        for (int i = 0; i < inventory.main.size(); ++i) {
-            if (itemStack.isEmpty() && inventory.main.get(i).isOf(itemStack.getItem())) return i;
-            if (!inventory.main.get(i).isEmpty() && ItemStack.areItemsEqual(inventory.main.get(i), itemStack)) {
+        for (int i = 0; i < ((PlayerInventoryAccessor) inventory).getMain().size(); ++i) {
+            if (itemStack.isEmpty() && ((PlayerInventoryAccessor) inventory).getMain().get(i).isOf(itemStack.getItem())) return i;
+            if (!((PlayerInventoryAccessor) inventory).getMain().get(i).isEmpty() && ItemStack.areItemsEqual(((PlayerInventoryAccessor) inventory).getMain().get(i), itemStack)) {
                 return i;
             }
         }
@@ -48,7 +49,7 @@ abstract public class Guide extends BlockHelperImpl {
 
     protected int getRequiredItemStackSlot(ClientPlayerEntity player) {
         if (player.getAbilities().creativeMode) {
-            return player.getInventory().selectedSlot;
+            return ((PlayerInventoryAccessor) player.getInventory()).getSelectedSlot();
         }
 
         ItemStack requiredItem = getRequiredItem(player).stream().findFirst().orElse(ItemStack.EMPTY);

@@ -18,6 +18,7 @@
     "MixinCamera",
     "MixinClientPlayerEntity",
     "MixinMouse",
+    "PlayerInventoryAccessor",
     "PlayerMoveC2SPacketMixin"
   ],
   "injectors": {
